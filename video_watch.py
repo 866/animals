@@ -14,7 +14,7 @@ FRAMES_AVERAGE = 10 * (FRAMES_TO_SKIP + 1)
 FOURCC = cv2.cv.CV_FOURCC(*'XVID')
 OUTPUT_FOLDER = "./output"
 
-cap = cv2.VideoCapture(0)#"/home/victor/Videos/2016-12-04-101522.webm")
+cap = cv2.VideoCapture(0) #"/home/victor/Videos/2016-12-04-101522.webm")
 
 
 def skip(nframes=FRAMES_TO_SKIP, delay=DELAY):
@@ -83,15 +83,31 @@ del imgs
 # Predefine some variables
 video_out = None
 last_movement = None
+last_nframes = None
+frames_counter = 0
 
 # Capture the video until 'q' is pressed
 while True:
     # Capture every nth frame
     skip()
     color_frame = proper_frame()
+    frames_counter += 1
+
+    # Measure FPS
+    if last_nframes is None:
+        last_nframes = time.time()
+
+    if frames_counter % 100 == 0:
+        elapse = time.time() - last_nframes
+        print("FPS: {:.2f}".format(frames_counter / float(elapse)))
+        last_nframes = time.time()
+        frames_counter = 0
+
+    # Process image
     gray_frame = cv2.cvtColor(color_frame, cv2.COLOR_BGR2GRAY)
     processed_frame = filter_image(gray_frame)
 
+    # Calculate fps
     # Find the difference
     diff_frame = np.abs(processed_frame - background).astype(dtype=np.uint8)
     diff_scalar = diff_sum(diff_frame, ptx)
