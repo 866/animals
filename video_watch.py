@@ -4,10 +4,10 @@ import time
 import os
 
 # Constants
-ALPHA = 0.001
-DELAY = 1 / 10.
-FPS = 1 / DELAY
-FRAMES_TO_SKIP = 1  # 30
+ALPHA = 0.005
+DELAY = 0.
+FPS = 8
+FRAMES_TO_SKIP = 0  # 30
 DIFF_THRESHOLD = 2
 MINTIME_STOP = 40  # in seconds
 FRAMES_AVERAGE = 10 * (FRAMES_TO_SKIP + 1)
@@ -59,7 +59,7 @@ if not os.path.isdir(OUTPUT_FOLDER):
         exit(-1)
 
 # Skip first frames
-skip(20)
+skip(20, 1/7.)
 #skip(6000, 0)
 # Shape of the image
 frame_shape = (int(cap.get(int(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT))),
@@ -103,15 +103,17 @@ while True:
 
     # Mix background and a bit of a new object
     background = ALPHA * processed_frame + (1 - ALPHA) * background
-    recording = video_out is not None
-    diff_color = cv2.cvtColor(diff_frame.astype(dtype=np.uint8), cv2.COLOR_GRAY2BGR)
-    cv2.putText(diff_color, "Diff: {0:.2f}".format(float(diff_scalar)), (20, 20),
-                cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, (255, 255, 255))
-    if recording:
-        cv2.putText(diff_color, " * REC", (20, 40),
-                    cv2.FONT_HERSHEY_TRIPLEX, 0.5, (0, 0, 255))
-    show_image = np.hstack((color_frame, diff_color))
-    cv2.imshow("ShowTime", show_image)
+
+    # Display output
+    # recording = video_out is not None
+    # diff_color = cv2.cvtColor(diff_frame.astype(dtype=np.uint8), cv2.COLOR_GRAY2BGR)
+    # cv2.putText(diff_color, "Diff: {0:.2f}".format(float(diff_scalar)), (20, 20),
+    #             cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, (255, 255, 255))
+    # if recording:
+    #     cv2.putText(diff_color, " * REC", (20, 40),
+    #                 cv2.FONT_HERSHEY_TRIPLEX, 0.5, (0, 0, 255))
+    # show_image = np.hstack((color_frame, diff_color))
+    # cv2.imshow("ShowTime", show_image)
 
     # Write the video if we have movement
     if video_out is not None:
