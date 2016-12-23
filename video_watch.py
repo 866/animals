@@ -128,7 +128,7 @@ while True:
             output_path = os.path.join(OUTPUT_FOLDER, datetime)
             print "Start REC " + output_path
             video_out = cv2.VideoWriter(output_path,
-                                        fourcc=FOURCC, fps=1 / (DELAY * FRAMES_TO_SKIP),
+                                        fourcc=FOURCC, fps=FPS,
                                         frameSize=frame_shape[::-1])  # interchanged sizes because of
                                                                       # width x height(instead of ncols x nrows)
         video_out.write(color_frame)
