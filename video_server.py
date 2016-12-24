@@ -29,7 +29,7 @@ def get_ip_address(ifname):
 server = None
 
 
-def get_cam_handler(shared_frame, shared_boolean, shared_float):
+def get_cam_handler(shared_frame, shared_boolean, shared_float, ip_address):
     """
     Makes a closure for CamHandler class
     :param shared_frame: frame that is shared between processes
@@ -83,7 +83,7 @@ def get_cam_handler(shared_frame, shared_boolean, shared_float):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write('<html><head></head><body>')
-                self.wfile.write('<img src="http://127.0.0.1:8080/cam.mjpg"/>')
+                self.wfile.write('<img src="http://{}:8080/cam.mjpg"/>'.format(ip_address))
                 self.wfile.write('</body></html>')
                 return
             if self.path.endswith('/exit'):
@@ -95,6 +95,8 @@ def get_cam_handler(shared_frame, shared_boolean, shared_float):
             if self.path.endswith('/fps'):
                 # Return fps value
                 self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
                 self.wfile.write("{:.2f}".format(shared_float.value))
                 return
 
@@ -114,7 +116,8 @@ def main():
     except Exception as e:
         print("Something wrong with arguments", e)
         exit(-1)
-    print ip_address
+
+    print("Starting the video server on {}".format(ip_address))
 
     # Define Video Capture object and auxilary objects
     cap = VideoCapture()
@@ -130,13 +133,16 @@ def main():
     video_process = Process(target=stream, args=(frame, finished, shared_float))
     video_process.start()
 
+    # Sleep for some time to allow videocapture start working first
+    time.sleep(5)
+
     global server
 
     try:
         # Start the server on the ip address
-        CamHandler = get_cam_handler(frame, finished, shared_float)
-        print("Starting the server on {}".format(ip_address))
+        CamHandler = get_cam_handler(frame, finished, shared_float, ip_address)
         server = ThreadedHTTPServer((ip_address, 8080), CamHandler)
+        print("Server started")
         server.serve_forever()
     except KeyboardInterrupt:
         # Release everything
