@@ -10,6 +10,7 @@ import fcntl
 import sys
 import numpy as np
 from video_capture import VideoCapture
+from motion import motion_detector, writer
 from multiprocessing import Array, Value, Process
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer import ThreadingMixIn
@@ -129,33 +130,48 @@ def main():
     frame = np.ctypeslib.as_array(shared_array_base.get_obj())
     frame = frame.reshape(shape[0], shape[1], shape[2])
     finished = Value('i', 0)
-    shared_float = Value('f', 0)
-    video_process = Process(target=stream, args=(frame, finished, shared_float))
+    write_video_flag = Value('i', 0)
+    shared_fps = Value('f', 0)
+
+    # Define processes
+    video_process = Process(target=stream, args=(frame, finished, shared_fps))
+    motion_detector_process = Process(target=motion_detector, args=(frame, finished, write_video_flag, shape))
+    writer_process = Process(target=writer, args=(frame, finished, write_video_flag, shape))
+
+    # Launch capture process
     video_process.start()
 
     # Sleep for some time to allow videocapture start working first
     time.sleep(5)
 
+    # Launch the rest processes
+    motion_detector_process.start()
+    writer_process.start()
+
     global server
+
+    def terminate():
+        cap.release()
+        finished.value = True
+        video_process.terminate()
+        motion_detector_process.terminate()
+        writer_process.terminate()
+        server.shutdown()
 
     try:
         # Start the server on the ip address
-        CamHandler = get_cam_handler(frame, finished, shared_float, ip_address)
-        server = ThreadedHTTPServer((ip_address, 8080), CamHandler)
+        camhandler = get_cam_handler(frame, finished, shared_fps, ip_address)
+        server = ThreadedHTTPServer((ip_address, 8080), camhandler)
         print("Server started")
         server.serve_forever()
     except KeyboardInterrupt:
         # Release everything
-        cap.release()
-        finished.value = 1
-        video_process.terminate()
-        server.socket.close()
+        terminate()
+        exit(0)
     except Exception as e:
         # Something wrong happened
         print("Exception", e)        
-        finished.value = 1
-        cap.release()
-        video_process.terminate()
+        terminate()
         exit(-1)
 
 if __name__ == '__main__':
