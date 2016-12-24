@@ -29,7 +29,7 @@ def get_ip_address(ifname):
 server = None
 
 
-def getCamHandler(shared_frame, shared_boolean, shared_float):
+def get_cam_handler(shared_frame, shared_boolean, shared_float):
     """
     Makes a closure for CamHandler class
     :param shared_frame: frame that is shared between processes
@@ -112,7 +112,7 @@ def main():
     try:
         ip_address = get_ip_address(sys.argv[1])
     except Exception as e:
-        print(e)
+        print("Something wrong with arguments", e)
         exit(-1)
     print ip_address
 
@@ -131,9 +131,10 @@ def main():
     video_process.start()
 
     global server
+
     try:
         # Start the server on the ip address
-        CamHandler = getCamHandler(frame, finished, shared_float)
+        CamHandler = get_cam_handler(frame, finished, shared_float)
         print("Starting the server on {}".format(ip_address))
         server = ThreadedHTTPServer((ip_address, 8080), CamHandler)
         server.serve_forever()
